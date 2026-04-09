@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Viewer</title>
+</head>
+
+<body style="text-align:center">
+
+<h2>📡 Live Stream Viewer</h2>
+
+<img id="stream" width="500" />
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+const socket = io("http://localhost:3000");
+
+// ✅ GET SESSION ID FROM URL
+const sessionId = window.location.pathname.split("/").pop();
+
+console.log("Joining session:", sessionId);
+
+// ✅ JOIN SESSION
+socket.emit("join-session", sessionId);
+
+// ✅ RECEIVE FRAMES
+socket.on("frame", (data) => {
+    console.log("Frame received");
+    document.getElementById("stream").src = data.imageData;
+});
+
+// ❌ SESSION ENDED
+socket.on("session-ended", () => {
+    alert("Stream ended");
+});
+</script>
+
+</body>
+</html>
