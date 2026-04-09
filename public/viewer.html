@@ -13,23 +13,24 @@
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
-const socket = io("http://localhost:3000");
+// ✅ connect to same deployed server
+const socket = io();
 
-// ✅ GET SESSION ID FROM URL
+// ✅ get session id from URL
 const sessionId = window.location.pathname.split("/").pop();
 
-console.log("Joining session:", sessionId);
+console.log("Joining:", sessionId);
 
-// ✅ JOIN SESSION
+// ✅ join room
 socket.emit("join-session", sessionId);
 
-// ✅ RECEIVE FRAMES
+// ✅ receive frames
 socket.on("frame", (data) => {
     console.log("Frame received");
     document.getElementById("stream").src = data.imageData;
 });
 
-// ❌ SESSION ENDED
+// session end
 socket.on("session-ended", () => {
     alert("Stream ended");
 });
