@@ -118,7 +118,7 @@ function startStreaming() {
 
         const imageData = canvas.toDataURL("image/jpeg", 0.7);
 
-        fetch("http://localhost:3000/api/stream", {
+        fetch("/api/stream", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -134,7 +134,7 @@ function startStreaming() {
 window.addEventListener("beforeunload", () => {
     if (stream) stream.getTracks().forEach(t => t.stop());
 
-    fetch("http://localhost:3000/api/end-session", {
+    fetch("/api/end-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId })
